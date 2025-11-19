@@ -2,6 +2,8 @@
 
 import { prisma } from "@/lib/db";
 import { getCurrentOrganization } from "@/lib/auth";
+import { ApiKeyActions } from "./_components/api-key-actions";
+import { DeactivateButton } from "./_components/deactivate-button";
 
 function maskHash(hash: string): string {
   if (!hash) return "";
@@ -34,9 +36,8 @@ export default async function ApiKeysPage() {
         <h1 className="text-xl font-semibold tracking-tight">API Keys</h1>
         <p className="mt-1 text-xs text-slate-600">
           Manage API keys for{" "}
-          <span className="font-medium text-slate-800">{org.name}</span>. For
-          now keys are seeded directly in the database; later this will support
-          creating and revoking keys from the UI.
+          <span className="font-medium text-slate-800">{org.name}</span>. Create
+          new keys or deactivate existing ones.
         </p>
       </header>
 
@@ -72,6 +73,7 @@ export default async function ApiKeysPage() {
       </section>
 
       <section>
+        <ApiKeyActions keys={keys} />
         <div className="mb-3 flex items-center justify-between gap-2">
           <h2 className="text-sm font-semibold tracking-tight">
             Existing API Keys
@@ -84,7 +86,7 @@ export default async function ApiKeysPage() {
 
         {keys.length === 0 ? (
           <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">
-            No API keys found. For now, create one via Prisma or a seed script.
+            No API keys found. Click "Create API Key" to create your first key.
           </div>
         ) : (
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -96,6 +98,7 @@ export default async function ApiKeysPage() {
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Created</th>
                   <th className="px-4 py-3">Last Used</th>
+                  <th className="px-4 py-3">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -127,6 +130,12 @@ export default async function ApiKeysPage() {
                     </td>
                     <td className="px-4 py-2 align-top text-xs text-slate-600">
                       {key.lastUsedAt ? key.lastUsedAt.toISOString() : "—"}
+                    </td>
+                    <td className="px-4 py-2 align-top text-xs">
+                      <DeactivateButton
+                        keyId={key.id}
+                        isActive={key.isActive}
+                      />
                     </td>
                   </tr>
                 ))}
