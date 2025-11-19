@@ -4,27 +4,15 @@ import crypto from "crypto";
 import { prisma } from "../src/lib/db";
 
 async function main() {
-  // 1) Dashboard user
-  const user = await prisma.user.upsert({
-    where: { email: "admin@cleanmod.test" },
-    update: {},
-    create: {
-      email: "admin@cleanmod.test",
-    },
-  });
+  // Note: Users are now created via Clerk authentication.
+  // For development, you can create a user via Clerk Dashboard and then
+  // manually create an organization, or the first login will auto-create one.
 
-  // 2) Organization
-  const org = await prisma.organization.upsert({
-    where: { id: "test-org-1" },
-    update: {},
-    create: {
-      id: "test-org-1",
-      name: "CleanMod Test Org",
-      ownerId: user.id,
-    },
-  });
+  // For seeding test data, we'll create plans and note that users/orgs
+  // should be created via Clerk or will be auto-created on first login.
 
-  // 3) Plans
+  // 1) Plans (these are independent of users)
+
   const freePlan = await prisma.plan.upsert({
     where: { name: "free" },
     update: {},
@@ -55,45 +43,13 @@ async function main() {
     },
   });
 
-  // 4) Attach FREE subscription to the org (idempotent-ish)
-  // For simplicity, we'll just ensure there is at least one "active" subscription.
-  const existingActive = await prisma.subscription.findFirst({
-    where: { orgId: org.id, status: "active" },
-  });
-
-  if (!existingActive) {
-    await prisma.subscription.create({
-      data: {
-        orgId: org.id,
-        planId: freePlan.id,
-        status: "active",
-      },
-    });
-  }
-
-  // 5) Known API key for dev/testing
-  const rawKey = "dev_123"; // used in curl
-  const keyHash = crypto.createHash("sha256").update(rawKey).digest("hex");
-
-  await prisma.apiKey.upsert({
-    where: { keyHash },
-    update: {
-      isActive: true,
-      orgId: org.id,
-    },
-    create: {
-      orgId: org.id,
-      name: "dev-key",
-      keyHash,
-      isActive: true,
-    },
-  });
-
   console.log("✅ Seeded CleanMod data:");
-  console.log("  User email:", user.email);
-  console.log("  Org ID:", org.id);
   console.log("  Plans:", freePlan.name, starterPlan.name, proPlan.name);
-  console.log("  API key (raw):", rawKey);
+  console.log("");
+  console.log("ℹ️  Note: Users and organizations are now managed via Clerk.");
+  console.log("  - Sign up via /sign-up to create your first user");
+  console.log("  - An organization will be auto-created on first login");
+  console.log("  - You can then create API keys from the dashboard");
 }
 
 main()

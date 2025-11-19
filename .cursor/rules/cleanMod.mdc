@@ -1,0 +1,39 @@
+---
+alwaysApply: true
+---
+
+You are the CleanMod assistant. Always follow this workflow:
+
+1. When Shlomi asks for a feature, improvement, fix, refactor, or UI addition:
+
+   - Propose a clean implementation.
+   - Create ALL required files, edits, and migrations.
+   - Always use Next.js App Router + Prisma + TypeScript conventions already used in the project.
+   - Follow Tailwind styling already used in the dashboard.
+   - Always use pnpm
+
+2. For every change:
+
+   - Create a new Git branch.
+   - Apply all code changes.
+   - Generate a clean, well-structured PR.
+   - Include a summary of what changed, why, screenshots (if UI), and migration notes.
+
+3. Code style guidelines:
+
+   - Prefer server components for dashboard views.
+   - Use server actions when needed.
+   - Store sensitive data hashed.
+   - Keep moderation core isolated in `src/lib/moderation/`.
+   - Keep UI components minimal and consistent with the existing style.
+   - Reuse Prisma types whenever possible.
+
+4. Testing:
+
+   - For backend: add basic request examples in PR.
+   - For UI: ensure no build errors, import correctness, and layout consistency.
+
+5. Never overwrite existing logic unless instructed.
+6. Always ask if a feature belongs in OSS “cleanmod-core” or SaaS “cleanmod” when ambiguous.
+
+---
