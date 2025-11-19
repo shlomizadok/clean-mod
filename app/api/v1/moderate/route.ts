@@ -6,13 +6,10 @@ import crypto from "crypto";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { moderateWithUnitary } from "@/lib/moderation/unitaryProvider";
+import { hashApiKey } from "@/lib/api-keys";
 
 const HASH_ALGO = "sha256";
 const DEFAULT_FREE_QUOTA = 5_000;
-
-function hashApiKey(rawKey: string): string {
-  return crypto.createHash(HASH_ALGO).update(rawKey).digest("hex");
-}
 
 function getApiKeyFromRequest(req: NextRequest): string | null {
   const authHeader = req.headers.get("authorization");
@@ -142,7 +139,13 @@ export async function POST(req: NextRequest) {
     // 5) Call moderation core (Unitary for now)
     const moderationResult = await moderateWithUnitary(text, "english-basic");
 
-    // 6) Log to DB
+    // 6) Update lastUsedAt on API key
+    await prisma.apiKey.update({
+      where: { id: apiKey.id },
+      data: { lastUsedAt: now },
+    });
+
+    // 7) Log to DB
     const inputHash = hashInput(text);
 
     const log = await prisma.moderationLog.create({
@@ -158,7 +161,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // 7) Increment usage counter (daily)
+    // 8) Increment usage counter (daily)
     const day = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     await prisma.usageCounter.upsert({
       where: {
@@ -177,7 +180,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // 8) Response to client
+    // 9) Response to client
     return NextResponse.json(
       {
         id: log.id,
