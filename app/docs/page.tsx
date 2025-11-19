@@ -1,5 +1,3 @@
-// app/docs/page.tsx
-
 import Link from "next/link";
 
 export const metadata = {
@@ -7,8 +5,115 @@ export const metadata = {
   description: "CleanMod API documentation for text moderation",
 };
 
+const errorResponses = [
+  {
+    code: "400 Bad Request",
+    description: "Invalid or missing request body fields.",
+    body: `{\n  "error": "Missing or invalid \\"text\\" field in request body."\n}`,
+    badgeClasses:
+      "rounded bg-red-100 px-2 py-1 text-xs font-semibold text-red-800",
+  },
+  {
+    code: "401 Unauthorized",
+    description: "Missing or invalid API key.",
+    body: `{\n  "error": "Missing API key. Use Authorization: Bearer <KEY> or x-api-key."\n}`,
+    badgeClasses:
+      "rounded bg-red-100 px-2 py-1 text-xs font-semibold text-red-800",
+  },
+  {
+    code: "429 Too Many Requests",
+    description: "Monthly quota exceeded.",
+    body: `{\n  "error": "Monthly quota exceeded. Upgrade your CleanMod plan to continue.",\n  "quota": 5000,\n  "used": 5000\n}`,
+    badgeClasses:
+      "rounded bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800",
+  },
+  {
+    code: "500 Internal Server Error",
+    description: "An unexpected error occurred on the server.",
+    body: `{\n  "error": "Internal server error."\n}`,
+    badgeClasses:
+      "rounded bg-red-100 px-2 py-1 text-xs font-semibold text-red-800",
+  },
+];
+
 export default function DocsPage() {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
+  const codeExamples = [
+    {
+      title: "cURL",
+      code: `curl -X POST ${baseUrl}/api/v1/moderate \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "text": "You are an idiot",
+    "model": "english-basic"
+  }'`,
+    },
+    {
+      title: "Node.js (fetch)",
+      code: `const response = await fetch('${baseUrl}/api/v1/moderate', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    text: 'You are an idiot',
+    model: 'english-basic',
+  }),
+});
+
+const result = await response.json();
+console.log(result);`,
+    },
+    {
+      title: "Python (requests)",
+      code: `import requests
+
+response = requests.post(
+    '${baseUrl}/api/v1/moderate',
+    headers={
+        'Authorization': 'Bearer YOUR_API_KEY',
+        'Content-Type': 'application/json',
+    },
+    json={
+        'text': 'You are an idiot',
+        'model': 'english-basic',
+    },
+)
+
+result = response.json()
+print(result)`,
+    },
+    {
+      title: "PHP",
+      code: `<?php
+
+$url = '${baseUrl}/api/v1/moderate';
+$data = [
+    'text' => 'You are an idiot',
+    'model' => 'english-basic',
+];
+
+$options = [
+    'http' => [
+        'method' => 'POST',
+        'header' => [
+            'Authorization: Bearer YOUR_API_KEY',
+            'Content-Type: application/json',
+        ],
+        'content' => json_encode($data),
+    ],
+];
+
+$context = stream_context_create($options);
+$response = file_get_contents($url, false, $context);
+$result = json_decode($response, true);
+
+var_dump($result);`,
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -203,83 +308,21 @@ export default function DocsPage() {
           </p>
 
           <div className="space-y-6">
-            {/* 400 Error */}
-            <div>
-              <div className="mb-2 flex items-center gap-2">
-                <span className="rounded bg-red-100 px-2 py-1 text-xs font-semibold text-red-800">
-                  400 Bad Request
-                </span>
+            {errorResponses.map((error) => (
+              <div key={error.code}>
+                <div className="mb-2 flex items-center gap-2">
+                  <span className={error.badgeClasses}>{error.code}</span>
+                </div>
+                <p className="mb-2 text-sm text-slate-700">
+                  {error.description}
+                </p>
+                <div className="rounded-lg bg-slate-900 p-4 overflow-x-auto">
+                  <pre className="text-sm text-slate-100">
+                    <code>{error.body}</code>
+                  </pre>
+                </div>
               </div>
-              <p className="mb-2 text-sm text-slate-700">
-                Invalid or missing request body fields.
-              </p>
-              <div className="rounded-lg bg-slate-900 p-4 overflow-x-auto">
-                <pre className="text-sm text-slate-100">
-                  <code>{`{
-  "error": "Missing or invalid \\"text\\" field in request body."
-}`}</code>
-                </pre>
-              </div>
-            </div>
-
-            {/* 401 Error */}
-            <div>
-              <div className="mb-2 flex items-center gap-2">
-                <span className="rounded bg-red-100 px-2 py-1 text-xs font-semibold text-red-800">
-                  401 Unauthorized
-                </span>
-              </div>
-              <p className="mb-2 text-sm text-slate-700">
-                Missing or invalid API key.
-              </p>
-              <div className="rounded-lg bg-slate-900 p-4 overflow-x-auto">
-                <pre className="text-sm text-slate-100">
-                  <code>{`{
-  "error": "Missing API key. Use Authorization: Bearer <KEY> or x-api-key."
-}`}</code>
-                </pre>
-              </div>
-            </div>
-
-            {/* 429 Error */}
-            <div>
-              <div className="mb-2 flex items-center gap-2">
-                <span className="rounded bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
-                  429 Too Many Requests
-                </span>
-              </div>
-              <p className="mb-2 text-sm text-slate-700">
-                Monthly quota exceeded.
-              </p>
-              <div className="rounded-lg bg-slate-900 p-4 overflow-x-auto">
-                <pre className="text-sm text-slate-100">
-                  <code>{`{
-  "error": "Monthly quota exceeded. Upgrade your CleanMod plan to continue.",
-  "quota": 5000,
-  "used": 5000
-}`}</code>
-                </pre>
-              </div>
-            </div>
-
-            {/* 500 Error */}
-            <div>
-              <div className="mb-2 flex items-center gap-2">
-                <span className="rounded bg-red-100 px-2 py-1 text-xs font-semibold text-red-800">
-                  500 Internal Server Error
-                </span>
-              </div>
-              <p className="mb-2 text-sm text-slate-700">
-                An unexpected error occurred on the server.
-              </p>
-              <div className="rounded-lg bg-slate-900 p-4 overflow-x-auto">
-                <pre className="text-sm text-slate-100">
-                  <code>{`{
-  "error": "Internal server error."
-}`}</code>
-                </pre>
-              </div>
-            </div>
+            ))}
           </div>
         </section>
 
@@ -290,75 +333,18 @@ export default function DocsPage() {
           </h2>
 
           <div className="space-y-6">
-            {/* cURL Example */}
-            <div>
-              <h3 className="mb-3 text-lg font-semibold text-slate-900">
-                cURL
-              </h3>
-              <div className="rounded-lg bg-slate-900 p-4 overflow-x-auto">
-                <pre className="text-sm text-slate-100">
-                  <code>{`curl -X POST ${baseUrl}/api/v1/moderate \\
-  -H "Authorization: Bearer YOUR_API_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "text": "You are an idiot",
-    "model": "english-basic"
-  }'`}</code>
-                </pre>
+            {codeExamples.map((example) => (
+              <div key={example.title}>
+                <h3 className="mb-3 text-lg font-semibold text-slate-900">
+                  {example.title}
+                </h3>
+                <div className="rounded-lg bg-slate-900 p-4 overflow-x-auto">
+                  <pre className="text-sm text-slate-100">
+                    <code>{example.code}</code>
+                  </pre>
+                </div>
               </div>
-            </div>
-
-            {/* Node.js Example */}
-            <div>
-              <h3 className="mb-3 text-lg font-semibold text-slate-900">
-                Node.js (fetch)
-              </h3>
-              <div className="rounded-lg bg-slate-900 p-4 overflow-x-auto">
-                <pre className="text-sm text-slate-100">
-                  <code>{`const response = await fetch('${baseUrl}/api/v1/moderate', {
-  method: 'POST',
-  headers: {
-    'Authorization': 'Bearer YOUR_API_KEY',
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    text: 'You are an idiot',
-    model: 'english-basic',
-  }),
-});
-
-const result = await response.json();
-console.log(result);`}</code>
-                </pre>
-              </div>
-            </div>
-
-            {/* Python Example */}
-            <div>
-              <h3 className="mb-3 text-lg font-semibold text-slate-900">
-                Python (requests)
-              </h3>
-              <div className="rounded-lg bg-slate-900 p-4 overflow-x-auto">
-                <pre className="text-sm text-slate-100">
-                  <code>{`import requests
-
-response = requests.post(
-    '${baseUrl}/api/v1/moderate',
-    headers={
-        'Authorization': 'Bearer YOUR_API_KEY',
-        'Content-Type': 'application/json',
-    },
-    json={
-        'text': 'You are an idiot',
-        'model': 'english-basic',
-    },
-)
-
-result = response.json()
-print(result)`}</code>
-                </pre>
-              </div>
-            </div>
+            ))}
           </div>
         </section>
 
