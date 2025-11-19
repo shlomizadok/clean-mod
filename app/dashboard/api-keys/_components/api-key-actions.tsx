@@ -10,6 +10,7 @@ export function ApiKeyActions() {
   );
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const handleCreate = () => {
     setError(null);
@@ -24,8 +25,10 @@ export function ApiKeyActions() {
     });
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
+  const copyToClipboard = async (text: string) => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -69,9 +72,13 @@ export function ApiKeyActions() {
                 </code>
                 <button
                   onClick={() => copyToClipboard(newKey.rawKey)}
-                  className="rounded bg-slate-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-600"
+                  className={`rounded px-3 py-1.5 text-xs font-medium transition-colors ${
+                    copied
+                      ? "bg-emerald-600 text-white"
+                      : "bg-slate-700 text-white hover:bg-slate-600"
+                  }`}
                 >
-                  Copy
+                  {copied ? "Copied!" : "Copy"}
                 </button>
               </div>
             </div>
@@ -86,6 +93,7 @@ export function ApiKeyActions() {
               onClick={() => {
                 setShowModal(false);
                 setNewKey(null);
+                setCopied(false);
               }}
               className="mt-4 w-full rounded-lg bg-slate-900 px-4 py-2 text-xs font-medium text-white hover:bg-slate-800"
             >
