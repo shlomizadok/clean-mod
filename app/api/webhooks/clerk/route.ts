@@ -43,55 +43,76 @@ export async function POST(req: Request) {
 
   const eventType = evt.type;
 
-  if (eventType === "user.created") {
-    const data = evt.data as {
-      id: string;
-      email_addresses: Array<{ email_address: string }>;
-      first_name: string | null;
-      last_name: string | null;
-    };
-    await prisma.user.create({
-      data: {
-        clerkId: data.id,
-        email: data.email_addresses[0]?.email_address ?? null,
-        firstName: data.first_name ?? null,
-        lastName: data.last_name ?? null,
-      },
-    });
-  }
-
-  if (eventType === "user.updated") {
-    const data = evt.data as {
-      id: string;
-      email_addresses: Array<{ email_address: string }>;
-      first_name: string | null;
-      last_name: string | null;
-    };
-    const existingUser = await prisma.user.findUnique({
-      where: { clerkId: data.id },
-    });
-    if (existingUser) {
-      await prisma.user.update({
-        where: { id: existingUser.id },
-        data: {
+  try {
+    if (eventType === "user.created") {
+      const data = evt.data as {
+        id: string;
+        email_addresses: Array<{ email_address: string }>;
+        first_name: string | null;
+        last_name: string | null;
+      };
+      // Use upsert to make idempotent - handles race conditions with getCurrentUser()
+      await prisma.user.upsert({
+        where: { clerkId: data.id },
+        create: {
+          clerkId: data.id,
+          email: data.email_addresses[0]?.email_address ?? null,
+          firstName: data.first_name ?? null,
+          lastName: data.last_name ?? null,
+        },
+        update: {
           email: data.email_addresses[0]?.email_address ?? null,
           firstName: data.first_name ?? null,
           lastName: data.last_name ?? null,
         },
       });
     }
-  }
 
-  if (eventType === "user.deleted") {
-    const data = evt.data as { id: string };
-    const existingUser = await prisma.user.findUnique({
-      where: { clerkId: data.id },
-    });
-    if (existingUser) {
-      await prisma.user.delete({
-        where: { id: existingUser.id },
+    if (eventType === "user.updated") {
+      const data = evt.data as {
+        id: string;
+        email_addresses: Array<{ email_address: string }>;
+        first_name: string | null;
+        last_name: string | null;
+      };
+      // Use upsert to handle case where update arrives before create
+      await prisma.user.upsert({
+        where: { clerkId: data.id },
+        create: {
+          clerkId: data.id,
+          email: data.email_addresses[0]?.email_address ?? null,
+          firstName: data.first_name ?? null,
+          lastName: data.last_name ?? null,
+        },
+        update: {
+          email: data.email_addresses[0]?.email_address ?? null,
+          firstName: data.first_name ?? null,
+          lastName: data.last_name ?? null,
+        },
       });
     }
+
+    if (eventType === "user.deleted") {
+      const data = evt.data as { id: string };
+      // Use deleteMany to make idempotent - no error if record doesn't exist
+      await prisma.user.deleteMany({
+        where: { clerkId: data.id },
+      });
+    }
+  } catch (error: any) {
+    // Log error details for debugging
+    console.error(`Webhook error type: ${evt.type}`, error);
+
+    // Return 500 for genuine DB problems (not P2025 or P2002)
+    // P2025 = record not found (treat as success for idempotency)
+    // P2002 = unique constraint (shouldn't happen with upsert, but treat as success)
+    if (error?.code === "P2025" || error?.code === "P2002") {
+      // These are expected in some race conditions, treat as success
+      return new Response("", { status: 200 });
+    }
+
+    // For other errors, return 500
+    return new Response("Internal server error", { status: 500 });
   }
 
   return new Response("", { status: 200 });

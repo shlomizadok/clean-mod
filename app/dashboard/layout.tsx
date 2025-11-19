@@ -1,9 +1,9 @@
 // app/dashboard/layout.tsx
 
-import Link from "next/link";
 import type { ReactNode } from "react";
 import { UserButton } from "@clerk/nextjs";
 import { getCurrentUser } from "@/lib/auth";
+import { SidebarNav } from "./_components/sidebar-nav";
 
 const navItems = [
   { href: "/dashboard", label: "Overview" },
@@ -59,23 +59,7 @@ export default async function DashboardLayout({
       <div className="mx-auto flex max-w-6xl gap-6 px-4 py-6">
         {/* Sidebar */}
         <aside className="w-48 shrink-0">
-          <nav className="space-y-1 text-sm">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="block rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100 aria-[current=page]:bg-slate-900 aria-[current=page]:text-slate-50"
-                aria-current={
-                  typeof window !== "undefined" &&
-                  window.location.pathname === item.href
-                    ? "page"
-                    : undefined
-                }
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+          <SidebarNav items={navItems} />
         </aside>
 
         {/* Content area */}
