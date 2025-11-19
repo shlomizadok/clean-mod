@@ -1,67 +1,126 @@
-import Image from "next/image";
+import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 
 export default async function Home() {
   const { userId } = await auth();
 
+  // Redirect authenticated users to dashboard
   if (userId) {
     redirect("/dashboard");
   }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-white">
+      <main className="mx-auto max-w-6xl px-6 py-20">
+        {/* Hero Section */}
+        <section className="mb-20 text-center">
+          <h1 className="mb-6 text-5xl font-semibold tracking-tight text-slate-900 sm:text-6xl">
+            CleanMod
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="mb-4 text-2xl font-medium text-slate-700 sm:text-3xl">
+            AI Moderation for Comments & User-Generated Content
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <Link
-            className="flex h-12 w-full items-center justify-center rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="/sign-up"
-          >
-            Get Started
-          </Link>
-          <Link
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="/sign-in"
-          >
-            Sign In
-          </Link>
-          <Link
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="/docs"
-          >
-            API Docs
-          </Link>
-        </div>
+          <p className="mx-auto mb-10 max-w-2xl text-lg leading-8 text-slate-600">
+            A fast, developer-friendly API that detects toxicity, hate,
+            harassment and more — powered by modern open-source models.
+          </p>
+          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <Link
+              href="/dashboard"
+              className="flex h-12 items-center justify-center rounded-lg bg-slate-900 px-8 text-base font-medium text-white transition-colors hover:bg-slate-800"
+            >
+              Get Started
+            </Link>
+            <Link
+              href="/docs"
+              className="flex h-12 items-center justify-center rounded-lg border border-slate-300 bg-white px-8 text-base font-medium text-slate-700 transition-colors hover:bg-slate-50"
+            >
+              API Docs
+            </Link>
+          </div>
+        </section>
+
+        {/* Feature Highlights */}
+        <section className="mb-20">
+          <div className="grid gap-6 md:grid-cols-3">
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="mb-4 text-3xl">🔒</div>
+              <h3 className="mb-2 text-lg font-semibold text-slate-900">
+                Secure by design
+              </h3>
+              <p className="text-sm leading-6 text-slate-600">
+                API keys are hashed and private by default.
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="mb-4 text-3xl">⚡</div>
+              <h3 className="mb-2 text-lg font-semibold text-slate-900">
+                Fast moderation
+              </h3>
+              <p className="text-sm leading-6 text-slate-600">
+                &lt;300ms with cached model inference.
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="mb-4 text-3xl">🧠</div>
+              <h3 className="mb-2 text-lg font-semibold text-slate-900">
+                Smart scoring
+              </h3>
+              <p className="text-sm leading-6 text-slate-600">
+                Normalized, consistent schema across providers.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Code Example */}
+        <section className="mb-20">
+          <h2 className="mb-4 text-2xl font-semibold text-slate-900">
+            Quick Start
+          </h2>
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-sm">
+            <pre className="overflow-x-auto p-6 text-sm">
+              <code className="text-slate-800">
+                {`curl -X POST https://cleanmod.dev/api/v1/moderate \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{"text":"You are disgusting"}'`}
+              </code>
+            </pre>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="border-t border-slate-200 pt-8">
+          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+            <p className="text-sm text-slate-600">
+              © {new Date().getFullYear()} CleanMod. All rights reserved.
+            </p>
+            <nav className="flex flex-wrap items-center gap-6 text-sm">
+              <Link
+                href="/docs"
+                className="text-slate-600 transition-colors hover:text-slate-900"
+              >
+                Docs
+              </Link>
+              <a
+                href="https://github.com/shlomizadok/clean-mod"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-slate-600 transition-colors hover:text-slate-900"
+              >
+                GitHub
+              </a>
+              <Link
+                href="/dashboard"
+                className="text-slate-600 transition-colors hover:text-slate-900"
+              >
+                Dashboard
+              </Link>
+            </nav>
+          </div>
+        </footer>
       </main>
     </div>
   );
