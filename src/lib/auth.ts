@@ -24,20 +24,22 @@ export async function getCurrentUser() {
   const firstName = clerkUser.firstName ?? null;
   const lastName = clerkUser.lastName ?? null;
 
-  let user = await prisma.user.findUnique({
-    where: { clerkId: clerkId },
-    include: {
-      organizations: {
-        include: {
-          subscriptions: {
-            where: { status: "active" },
-            include: { plan: true },
-            take: 1,
-          },
-          usageCounters: true,
+  const userInclude = {
+    organizations: {
+      include: {
+        subscriptions: {
+          where: { status: "active" },
+          include: { plan: true },
+          take: 1,
         },
+        usageCounters: true,
       },
     },
+  };
+
+  let user = await prisma.user.findUnique({
+    where: { clerkId: clerkId },
+    include: userInclude,
   });
 
   if (!user) {
@@ -50,18 +52,7 @@ export async function getCurrentUser() {
           firstName: firstName,
           lastName: lastName,
         },
-        include: {
-          organizations: {
-            include: {
-              subscriptions: {
-                where: { status: "active" },
-                include: { plan: true },
-                take: 1,
-              },
-              usageCounters: true,
-            },
-          },
-        },
+        include: userInclude,
       });
     } catch (error: any) {
       // If unique constraint error, user was created by another request
@@ -69,17 +60,7 @@ export async function getCurrentUser() {
       if (error?.code === "P2002") {
         user = await prisma.user.findUnique({
           where: { clerkId: clerkId },
-          include: {
-            organizations: {
-              include: {
-                subscriptions: {
-                  where: { status: "active" },
-                  include: { plan: true },
-                  take: 1,
-                },
-              },
-            },
-          },
+          include: userInclude,
         });
       } else {
         throw error;
@@ -101,17 +82,7 @@ export async function getCurrentUser() {
         firstName: firstName,
         lastName: lastName,
       },
-      include: {
-        organizations: {
-          include: {
-            subscriptions: {
-              where: { status: "active" },
-              include: { plan: true },
-              take: 1,
-            },
-          },
-        },
-      },
+      include: userInclude,
     });
   }
 
