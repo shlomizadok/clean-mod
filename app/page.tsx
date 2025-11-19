@@ -63,7 +63,7 @@ export default async function Home() {
               </p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="mb-4 text-3xl">🧠</div>
+              <div className="mb-4 text-3xl" role="img" aria-label="Brain icon">🧠</div>
               <h3 className="mb-2 text-lg font-semibold text-slate-900">
                 Smart scoring
               </h3>
