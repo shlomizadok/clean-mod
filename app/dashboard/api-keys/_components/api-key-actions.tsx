@@ -3,17 +3,7 @@
 import { useState, useTransition } from "react";
 import { createApiKey } from "../actions";
 
-type ApiKey = {
-  id: string;
-  name: string;
-  isActive: boolean;
-};
-
-type ApiKeyActionsProps = {
-  keys: ApiKey[];
-};
-
-export function ApiKeyActions({}: ApiKeyActionsProps) {
+export function ApiKeyActions() {
   const [isPending, startTransition] = useTransition();
   const [newKey, setNewKey] = useState<{ rawKey: string; name: string } | null>(
     null

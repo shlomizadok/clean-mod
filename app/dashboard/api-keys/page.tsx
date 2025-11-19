@@ -73,7 +73,7 @@ export default async function ApiKeysPage() {
       </section>
 
       <section>
-        <ApiKeyActions keys={keys} />
+        <ApiKeyActions />
         <div className="mb-3 flex items-center justify-between gap-2">
           <h2 className="text-sm font-semibold tracking-tight">
             Existing API Keys
