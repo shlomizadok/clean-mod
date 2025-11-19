@@ -1,6 +1,7 @@
 // app/dashboard/api-keys/page.tsx
 
 import { prisma } from "@/lib/db";
+import { getCurrentOrganization } from "@/lib/auth";
 
 function maskHash(hash: string): string {
   if (!hash) return "";
@@ -9,32 +10,23 @@ function maskHash(hash: string): string {
 }
 
 export default async function ApiKeysPage() {
-  // Prefer an org that actually has apiKeys
-  const org = await prisma.organization.findFirst({
-    where: {
-      apiKeys: {
-        some: {},
-      },
-    },
-    include: {
-      apiKeys: {
-        orderBy: { createdAt: "asc" },
-      },
-    },
-  });
+  const org = await getCurrentOrganization();
 
   if (!org) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <p className="text-gray-600">
-          No organization with API keys found. Did you run the Prisma seed and
-          call the API at least once?
+          Unable to load organization. Please try refreshing.
         </p>
       </div>
     );
   }
 
-  const keys = org.apiKeys;
+  // Load API keys for the current organization
+  const keys = await prisma.apiKey.findMany({
+    where: { orgId: org.id },
+    orderBy: { createdAt: "asc" },
+  });
 
   return (
     <div className="w-full">

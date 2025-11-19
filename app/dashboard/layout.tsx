@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { UserButton } from "@clerk/nextjs";
+import { getCurrentUser } from "@/lib/auth";
 
 const navItems = [
   { href: "/dashboard", label: "Overview" },
@@ -9,7 +11,13 @@ const navItems = [
   // later: { href: '/dashboard/logs', label: 'Logs' }, etc.
 ];
 
-export default function DashboardLayout({ children }: { children: ReactNode }) {
+export default async function DashboardLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const user = await getCurrentUser();
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       {/* Top bar */}
@@ -29,9 +37,20 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
 
-          <div className="text-xs text-slate-500">
-            {/* Placeholder for user profile / org switcher later */}
-            admin@cleanmod.test
+          <div className="flex items-center gap-3">
+            {user && (
+              <div className="text-right text-xs text-slate-500">
+                <div className="font-medium text-slate-700">
+                  {user.firstName && user.lastName
+                    ? `${user.firstName} ${user.lastName}`
+                    : user.email || "User"}
+                </div>
+                {user.email && (
+                  <div className="text-slate-500">{user.email}</div>
+                )}
+              </div>
+            )}
+            <UserButton afterSignOutUrl="/" />
           </div>
         </div>
       </header>

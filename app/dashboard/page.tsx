@@ -1,6 +1,7 @@
 // app/dashboard/page.tsx
 
 import { prisma } from "@/lib/db";
+import { getCurrentOrganization } from "@/lib/auth";
 
 function getCurrentMonthRange(now = new Date()) {
   const start = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -15,22 +16,13 @@ function getTodayRange(now = new Date()) {
 }
 
 export default async function DashboardPage() {
-  const org = await prisma.organization.findFirst({
-    include: {
-      subscriptions: {
-        where: { status: "active" },
-        include: { plan: true },
-        take: 1,
-      },
-      usageCounters: true,
-    },
-  });
+  const org = await getCurrentOrganization();
 
   if (!org) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <p className="text-gray-600">
-          No organization found. Did you run the Prisma seed?
+          Unable to load organization. Please try refreshing.
         </p>
       </div>
     );
@@ -45,12 +37,12 @@ export default async function DashboardPage() {
   const monthlyQuota = plan?.monthlyQuota ?? 5000;
 
   const monthlyUsage = org.usageCounters
-    .filter((uc) => uc.date >= monthStart && uc.date < monthEnd)
-    .reduce((sum, uc) => sum + uc.count, 0);
+    .filter((uc: { date: Date }) => uc.date >= monthStart && uc.date < monthEnd)
+    .reduce((sum: number, uc: { count: number }) => sum + uc.count, 0);
 
   const todaysUsage = org.usageCounters
-    .filter((uc) => uc.date >= todayStart && uc.date < todayEnd)
-    .reduce((sum, uc) => sum + uc.count, 0);
+    .filter((uc: { date: Date }) => uc.date >= todayStart && uc.date < todayEnd)
+    .reduce((sum: number, uc: { count: number }) => sum + uc.count, 0);
 
   const usagePercent = Math.min(
     100,

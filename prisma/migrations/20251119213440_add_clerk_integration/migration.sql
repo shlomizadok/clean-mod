@@ -1,0 +1,14 @@
+-- AlterTable
+ALTER TABLE "User" 
+  DROP COLUMN IF EXISTS "passwordHash",
+  ADD COLUMN IF NOT EXISTS "clerkId" TEXT,
+  ADD COLUMN IF NOT EXISTS "firstName" TEXT,
+  ADD COLUMN IF NOT EXISTS "lastName" TEXT,
+  ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  ALTER COLUMN "email" DROP NOT NULL;
+
+-- CreateIndex
+CREATE UNIQUE INDEX IF NOT EXISTS "User_clerkId_key" ON "User"("clerkId");
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "User_clerkId_idx" ON "User"("clerkId");

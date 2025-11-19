@@ -16,13 +16,17 @@ datasource db {
 /// User accounts for the dashboard (not API consumers directly)
 model User {
   id           String          @id @default(cuid())
-  email        String          @unique
-  passwordHash String?         // null if using magic-link in future
+  clerkId      String?         @unique // Clerk user ID (nullable for migration compatibility)
+  email        String?         // Can be null, synced from Clerk
+  firstName    String?
+  lastName     String?
   createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @default(now()) @updatedAt
 
   organizations Organization[] // orgs this user owns
 
   @@index([email])
+  @@index([clerkId])
 }
 
 /// An organization (team / project owner) – the billing + quota entity

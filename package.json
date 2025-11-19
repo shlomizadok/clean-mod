@@ -12,11 +12,13 @@
     "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
+    "@clerk/nextjs": "^6.35.2",
     "@huggingface/inference": "^4.13.3",
     "@prisma/client": "^6.19.0",
     "next": "16.0.3",
     "react": "19.2.0",
-    "react-dom": "19.2.0"
+    "react-dom": "19.2.0",
+    "svix": "^1.81.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
