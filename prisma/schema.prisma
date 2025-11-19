@@ -1,0 +1,131 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// User accounts for the dashboard (not API consumers directly)
+model User {
+  id           String          @id @default(cuid())
+  email        String          @unique
+  passwordHash String?         // null if using magic-link in future
+  createdAt    DateTime        @default(now())
+
+  organizations Organization[] // orgs this user owns
+
+  @@index([email])
+}
+
+/// An organization (team / project owner) – the billing + quota entity
+model Organization {
+  id            String          @id @default(cuid())
+  name          String
+  createdAt     DateTime        @default(now())
+  ownerId       String
+  owner         User            @relation(fields: [ownerId], references: [id])
+
+  apiKeys       ApiKey[]
+  subscriptions Subscription[]
+  logs          ModerationLog[]
+  usageCounters UsageCounter[]
+
+  @@index([ownerId])
+}
+
+/// API keys used by clients to call /api/v1/moderate
+model ApiKey {
+  id            String         @id @default(cuid())
+  orgId         String
+  organization  Organization   @relation(fields: [orgId], references: [id])
+
+  name          String         // e.g. "prod-backend", "staging"
+  keyHash       String         @unique // SHA-256 hash of the real key
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  lastUsedAt    DateTime?
+
+  logs          ModerationLog[]
+
+  @@index([orgId])
+  @@index([isActive])
+}
+
+/// Subscription plan definition (Free, Starter, Pro, etc.)
+model Plan {
+  id            String          @id @default(cuid())
+  name          String          @unique // "free", "starter", "pro"
+  monthlyQuota  Int             // number of moderation calls included
+  modelsAllowed Json            // e.g. ["english-basic", "english-pro"]
+  createdAt     DateTime        @default(now())
+
+  subscriptions Subscription[]
+}
+
+/// Organization <-> Plan subscription. Stripe-backed.
+model Subscription {
+  id                    String         @id @default(cuid())
+  orgId                 String
+  organization          Organization   @relation(fields: [orgId], references: [id])
+
+  planId                String
+  plan                  Plan           @relation(fields: [planId], references: [id])
+
+  stripeCustomerId      String?
+  stripeSubscriptionId  String?
+  status                String         // "active" | "trialing" | "canceled" | etc.
+  renewsAt              DateTime?
+  createdAt             DateTime       @default(now())
+
+  @@index([orgId])
+  @@index([planId])
+  @@index([status])
+}
+
+/// Single moderation event (one call to /moderate)
+model ModerationLog {
+  id            String         @id @default(cuid())
+
+  orgId         String
+  organization  Organization   @relation(fields: [orgId], references: [id])
+
+  apiKeyId      String?
+  apiKey        ApiKey?        @relation(fields: [apiKeyId], references: [id])
+
+  createdAt     DateTime       @default(now())
+
+  provider      String         // "unitary" | "openai"
+  model         String         // e.g. "unitary/multilingual-toxic-xlm-roberta"
+
+  inputHash     String         // hash of input text (no raw text stored)
+  rawScore      Json           // provider raw response (optional / can truncate)
+  normalized    Json           // NormalizedModerationResult JSON
+  decision      String         // "allow" | "flag" | "block"
+
+  @@index([orgId, createdAt])
+  @@index([apiKeyId])
+  @@index([provider])
+  @@index([decision])
+}
+
+/// Simple usage aggregation for quotas & charts
+model UsageCounter {
+  id           String         @id @default(cuid())
+
+  orgId        String
+  organization Organization    @relation(fields: [orgId], references: [id])
+
+  date         DateTime        // usually truncated to day (e.g. 2025-11-16T00:00:00Z)
+  count        Int             @default(0)
+
+  @@unique([orgId, date], name: "orgId_date")
+  @@index([orgId])
+}
