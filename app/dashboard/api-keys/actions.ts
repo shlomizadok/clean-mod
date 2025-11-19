@@ -10,6 +10,33 @@ export type CreateApiKeyResult =
   | { success: false; error: string };
 
 /**
+ * Get the maximum number of active API keys allowed for a plan
+ */
+function getApiKeyLimit(planName: string | null | undefined): number | null {
+  if (!planName) {
+    // Default to free plan if no plan
+    return 2;
+  }
+
+  const planNameLower = planName.toLowerCase();
+
+  switch (planNameLower) {
+    case "free":
+      return 2;
+    case "starter":
+      return 5;
+    case "pro":
+      return 10;
+    case "enterprise":
+      // Enterprise has no limit (or very high limit)
+      return null;
+    default:
+      // Unknown plan, default to free
+      return 2;
+  }
+}
+
+/**
  * Create a new API key for the current organization
  */
 export async function createApiKey(name?: string): Promise<CreateApiKeyResult> {
@@ -18,6 +45,47 @@ export async function createApiKey(name?: string): Promise<CreateApiKeyResult> {
 
     if (!org) {
       return { success: false, error: "Not authenticated" };
+    }
+
+    // Fetch active subscription & plan
+    const activeSub = await prisma.subscription.findFirst({
+      where: {
+        orgId: org.id,
+        status: "active",
+      },
+      include: {
+        plan: true,
+      },
+    });
+
+    const plan = activeSub?.plan;
+    const planName = plan?.name;
+
+    // Get API key limit for this plan
+    const apiKeyLimit = getApiKeyLimit(planName);
+
+    // Count active keys for this organization
+    const activeKeyCount = await prisma.apiKey.count({
+      where: {
+        orgId: org.id,
+        isActive: true,
+      },
+    });
+
+    // Check if limit is reached (null means no limit for enterprise)
+    if (apiKeyLimit !== null && activeKeyCount >= apiKeyLimit) {
+      if (planName?.toLowerCase() === "enterprise") {
+        return {
+          success: false,
+          error:
+            "You've reached the maximum number of API keys. Please contact us to increase your limit.",
+        };
+      }
+      return {
+        success: false,
+        error:
+          "You've reached the maximum number of API keys for your plan. Deactivate an existing key or upgrade your plan.",
+      };
     }
 
     // Generate raw key and hash
