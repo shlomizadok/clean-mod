@@ -6,13 +6,10 @@ import crypto from "crypto";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { moderateWithUnitary } from "@/lib/moderation/unitaryProvider";
+import { hashApiKey } from "@/lib/api-keys";
 
 const HASH_ALGO = "sha256";
 const DEFAULT_FREE_QUOTA = 5_000;
-
-function hashApiKey(rawKey: string): string {
-  return crypto.createHash(HASH_ALGO).update(rawKey).digest("hex");
-}
 
 function getApiKeyFromRequest(req: NextRequest): string | null {
   const authHeader = req.headers.get("authorization");
