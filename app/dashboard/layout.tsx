@@ -8,7 +8,7 @@ import { SidebarNav } from "./_components/sidebar-nav";
 const navItems = [
   { href: "/dashboard", label: "Overview" },
   { href: "/dashboard/api-keys", label: "API Keys" },
-  // later: { href: '/dashboard/logs', label: 'Logs' }, etc.
+  { href: "/dashboard/logs", label: "Logs" },
 ];
 
 export default async function DashboardLayout({
