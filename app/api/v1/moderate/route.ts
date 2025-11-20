@@ -137,7 +137,31 @@ export async function POST(req: NextRequest) {
     }
 
     // 5) Call moderation core (Unitary for now)
-    const moderationResult = await moderateWithUnitary(text, "english-basic");
+    let moderationResult;
+    try {
+      moderationResult = await moderateWithUnitary(text, "english-basic");
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Moderation provider error";
+
+      // Check if this is a provider authentication error
+      if (
+        errorMessage.includes("authentication failed") ||
+        errorMessage.includes("HF_API_TOKEN")
+      ) {
+        console.error("Moderation provider authentication error:", err);
+        return NextResponse.json(
+          {
+            error:
+              "Moderation service authentication failed. Please contact support.",
+          },
+          { status: 503 }
+        );
+      }
+
+      // Re-throw other errors to be caught by outer catch block
+      throw err;
+    }
 
     // 6) Update lastUsedAt on API key
     await prisma.apiKey.update({

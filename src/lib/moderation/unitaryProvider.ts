@@ -47,10 +47,21 @@ export async function moderateWithUnitary(
     raw = await hf.textClassification({
       model: HF_MODEL_ID,
       inputs: text,
-      // provider: 'hf-inference', // optional – default “auto” will route via HF Inference
+      // provider: 'hf-inference', // optional – default "auto" will route via HF Inference
     });
   } catch (err) {
     console.error("[CleanMod] HF InferenceClient error:", err);
+
+    // Check if this is an authentication/authorization error
+    const isAuthError = isAuthenticationError(err);
+    if (isAuthError) {
+      // Throw authentication error so it propagates to route handler
+      throw new Error(
+        "Hugging Face API authentication failed. Please check your HF_API_TOKEN environment variable."
+      );
+    }
+
+    // For other errors (network, model unavailable, etc.), use fallback
     return buildFallbackResult(config.providerModel, config.defaultThreshold);
   }
 
@@ -143,6 +154,48 @@ function extractLabelScores(raw: unknown): HfLabelScore[] {
 function maxCat(existing: number | undefined, next: number): number {
   if (existing === undefined) return next;
   return next > existing ? next : existing;
+}
+
+/**
+ * Checks if an error is an authentication/authorization error.
+ * HF InferenceClient may throw errors with status codes or error messages
+ * indicating invalid tokens or authentication issues.
+ */
+function isAuthenticationError(err: unknown): boolean {
+  if (!err) return false;
+
+  // Check for HTTP status codes
+  if (typeof err === "object" && "status" in err) {
+    const status = (err as { status?: number }).status;
+    if (status === 401 || status === 403) {
+      return true;
+    }
+  }
+
+  // Check for statusCode (alternative property name)
+  if (typeof err === "object" && "statusCode" in err) {
+    const statusCode = (err as { statusCode?: number }).statusCode;
+    if (statusCode === 401 || statusCode === 403) {
+      return true;
+    }
+  }
+
+  // Check error message for authentication-related keywords
+  const errorMessage = err instanceof Error ? err.message : String(err);
+  const lowerMessage = errorMessage.toLowerCase();
+
+  const authKeywords = [
+    "unauthorized",
+    "forbidden",
+    "invalid token",
+    "authentication",
+    "invalid api key",
+    "invalid api token",
+    "authentication failed",
+    "invalid credentials",
+  ];
+
+  return authKeywords.some((keyword) => lowerMessage.includes(keyword));
 }
 
 function buildFallbackResult(
