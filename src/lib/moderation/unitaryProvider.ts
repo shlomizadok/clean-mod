@@ -37,7 +37,12 @@ let hfClient: InferenceClient | null = null;
 
 function getHfClient(): InferenceClient {
   if (!hfClient) {
-    const token = process.env.HF_API_TOKEN || "";
+    const token = process.env.HF_API_TOKEN;
+    if (!token) {
+      throw new AuthenticationError(
+        "Hugging Face API token is not configured. Please set the HF_API_TOKEN environment variable."
+      );
+    }
     hfClient = new InferenceClient(token);
   }
   return hfClient;
