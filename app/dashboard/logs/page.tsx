@@ -76,12 +76,21 @@ function buildQueryString(
   updates?: Partial<FilterValues>
 ): string {
   const params = new URLSearchParams();
-  const merged = { ...filters, ...updates };
 
-  if (merged.decision) params.set("decision", merged.decision);
-  if (merged.provider) params.set("provider", merged.provider);
-  if (merged.range) params.set("range", merged.range);
-  if (merged.page && merged.page > 1) params.set("page", String(merged.page));
+  // Determine final values for each filter
+  const finalDecision =
+    updates?.decision !== undefined ? updates.decision : filters.decision;
+  const finalProvider =
+    updates?.provider !== undefined ? updates.provider : filters.provider;
+  const finalRange =
+    updates?.range !== undefined ? updates.range : filters.range;
+  const finalPage = updates?.page !== undefined ? updates.page : filters.page;
+
+  // Only add non-empty values to params
+  if (finalDecision) params.set("decision", finalDecision);
+  if (finalProvider) params.set("provider", finalProvider);
+  if (finalRange) params.set("range", finalRange);
+  if (finalPage && finalPage > 1) params.set("page", String(finalPage));
 
   const query = params.toString();
   return query ? `?${query}` : "";
@@ -100,7 +109,7 @@ function formatTimestamp(date: Date): string {
 }
 
 type LogsPageProps = {
-  searchParams?: SearchParams;
+  searchParams?: Promise<SearchParams> | SearchParams;
 };
 
 export default async function LogsPage({ searchParams }: LogsPageProps) {
@@ -116,7 +125,11 @@ export default async function LogsPage({ searchParams }: LogsPageProps) {
     );
   }
 
-  const filters = parseSearchParams(searchParams);
+  // Await searchParams if it's a Promise (Next.js 15+)
+  const resolvedSearchParams =
+    searchParams instanceof Promise ? await searchParams : searchParams;
+
+  const filters = parseSearchParams(resolvedSearchParams);
   const where = buildWhereClause(org.id, filters);
   const pageSize = 20;
   const skip = (filters.page - 1) * pageSize;
