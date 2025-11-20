@@ -157,13 +157,12 @@ export async function POST(req: NextRequest) {
       }
 
       // For other provider errors (network, service unavailable, invalid response, etc.)
-      // Return 503 Service Unavailable instead of 500 Internal Server Error
-      const errorMessage =
-        err instanceof Error ? err.message : "Moderation service error";
+      // Return 503 Service Unavailable with a generic message to avoid leaking implementation details
       console.error("Moderation provider error:", err);
       return NextResponse.json(
         {
-          error: errorMessage,
+          error:
+            "Moderation service is temporarily unavailable. Please try again later.",
         },
         { status: 503 }
       );

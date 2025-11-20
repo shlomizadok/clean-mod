@@ -106,9 +106,7 @@ export async function moderateWithUnitary(
 
     // For any other errors, throw instead of falling back to "allow"
     // This ensures we don't silently allow content when moderation fails
-    throw new Error(
-      `Moderation service error: ${errorMessage}. Please check your HF_API_TOKEN and try again.`
-    );
+    throw new Error(`Moderation service error: ${errorMessage}`);
   }
 
   const labelScores = extractLabelScores(raw);
