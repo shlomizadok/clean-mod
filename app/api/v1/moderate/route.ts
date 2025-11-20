@@ -5,7 +5,10 @@ import crypto from "crypto";
 
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { moderateWithUnitary } from "@/lib/moderation/unitaryProvider";
+import {
+  moderateWithUnitary,
+  AuthenticationError,
+} from "@/lib/moderation/unitaryProvider";
 import { hashApiKey } from "@/lib/api-keys";
 
 const HASH_ALGO = "sha256";
@@ -137,7 +140,33 @@ export async function POST(req: NextRequest) {
     }
 
     // 5) Call moderation core (Unitary for now)
-    const moderationResult = await moderateWithUnitary(text, "english-basic");
+    let moderationResult;
+    try {
+      moderationResult = await moderateWithUnitary(text, "english-basic");
+    } catch (err) {
+      // Check if this is a provider authentication error using type-safe instanceof
+      if (err instanceof AuthenticationError) {
+        console.error("Moderation provider authentication error:", err);
+        return NextResponse.json(
+          {
+            error:
+              "Moderation service authentication failed. Please contact support.",
+          },
+          { status: 503 }
+        );
+      }
+
+      // For other provider errors (network, service unavailable, invalid response, etc.)
+      // Return 503 Service Unavailable with a generic message to avoid leaking implementation details
+      console.error("Moderation provider error:", err);
+      return NextResponse.json(
+        {
+          error:
+            "Moderation service is temporarily unavailable. Please try again later.",
+        },
+        { status: 503 }
+      );
+    }
 
     // 6) Update lastUsedAt on API key
     await prisma.apiKey.update({

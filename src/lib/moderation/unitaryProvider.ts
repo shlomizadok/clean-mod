@@ -5,6 +5,17 @@ import type { NormalizedModerationResult } from "./types";
 
 export type UnitaryModelKey = "english-basic";
 
+/**
+ * Custom error class for authentication failures with the moderation provider.
+ * This allows for type-safe error checking using instanceof.
+ */
+export class AuthenticationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AuthenticationError";
+  }
+}
+
 // Model config
 const HF_MODEL_ID =
   process.env.HF_MODEL_ID || "unitary/multilingual-toxic-xlm-roberta";
@@ -21,8 +32,21 @@ const MODEL_CONFIG: Record<
 
 type HfLabelScore = { label: string; score: number };
 
-// Re-use one client per process
-const hf = new InferenceClient(process.env.HF_API_TOKEN || "");
+// Re-use one client per process (lazy initialization)
+let hfClient: InferenceClient | null = null;
+
+function getHfClient(): InferenceClient {
+  if (!hfClient) {
+    const token = process.env.HF_API_TOKEN;
+    if (!token) {
+      throw new AuthenticationError(
+        "Hugging Face API token is not configured. Please set the HF_API_TOKEN environment variable."
+      );
+    }
+    hfClient = new InferenceClient(token);
+  }
+  return hfClient;
+}
 
 /**
  * Calls HF text classification via the official JS client and
@@ -44,24 +68,63 @@ export async function moderateWithUnitary(
 
   let raw: unknown;
   try {
+    const hf = getHfClient();
     raw = await hf.textClassification({
       model: HF_MODEL_ID,
       inputs: text,
-      // provider: 'hf-inference', // optional – default “auto” will route via HF Inference
+      // provider: 'hf-inference', // optional – default "auto" will route via HF Inference
     });
   } catch (err) {
-    console.error("[CleanMod] HF InferenceClient error:", err);
-    return buildFallbackResult(config.providerModel, config.defaultThreshold);
+    // Extract status code from nested HTTP response objects if available
+    const httpResponse = (err as any)?.httpResponse;
+    const httpRequest = (err as any)?.httpRequest;
+    const statusFromResponse = httpResponse?.status || httpResponse?.statusCode;
+    const statusFromRequest = httpRequest?.status || httpRequest?.statusCode;
+    const status =
+      (err as any)?.status ??
+      (err as any)?.statusCode ??
+      statusFromResponse ??
+      statusFromRequest;
+
+    // Log essential error information
+    const errorMessage = err instanceof Error ? err.message : JSON.stringify(err);
+    console.error("[CleanMod] HF InferenceClient error:", {
+      message: errorMessage,
+      status,
+      name: err instanceof Error ? err.name : undefined,
+    });
+
+    // Check if this is an authentication/authorization error
+    // Create an error object with the extracted status for checking
+    const errWithStatus =
+      status && typeof err === "object" && err !== null
+        ? { ...err, status, statusCode: status }
+        : err;
+    const isAuthError = isAuthenticationError(errWithStatus);
+
+    if (isAuthError) {
+      // Throw authentication error so it propagates to route handler
+      throw new AuthenticationError(
+        "Hugging Face API authentication failed. Please check your HF_API_TOKEN environment variable."
+      );
+    }
+
+    // For any other errors, throw instead of falling back to "allow"
+    // This ensures we don't silently allow content when moderation fails
+    throw new Error(`Moderation service error: ${errorMessage}`);
   }
 
   const labelScores = extractLabelScores(raw);
 
   if (!labelScores.length) {
-    console.warn(
-      "[CleanMod] HF textClassification returned no label scores:",
-      raw
+    console.error(
+      "[CleanMod] HF textClassification returned no label scores. Raw response:",
+      JSON.stringify(raw, null, 2)
     );
-    return buildFallbackResult(config.providerModel, config.defaultThreshold);
+    // Throw error instead of falling back to "allow" - this is a service issue
+    throw new Error(
+      "Moderation service returned invalid response format. Please contact support."
+    );
   }
 
   const categories: Record<string, number> = {};
@@ -143,6 +206,39 @@ function extractLabelScores(raw: unknown): HfLabelScore[] {
 function maxCat(existing: number | undefined, next: number): number {
   if (existing === undefined) return next;
   return next > existing ? next : existing;
+}
+
+// Authentication-related keywords for error message detection
+const AUTH_KEYWORDS = [
+  "unauthorized",
+  "forbidden",
+  "invalid token",
+  "authentication",
+  "invalid api key",
+  "invalid api token",
+  "authentication failed",
+  "invalid credentials",
+] as const;
+
+/**
+ * Checks if an error is an authentication/authorization error.
+ * HF InferenceClient may throw errors with status codes or error messages
+ * indicating invalid tokens or authentication issues.
+ */
+function isAuthenticationError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+
+  // Check for HTTP status codes (combined check for status and statusCode)
+  const status = (err as any).status ?? (err as any).statusCode;
+  if (typeof status === "number" && [401, 403].includes(status)) {
+    return true;
+  }
+
+  // Check error message for authentication-related keywords
+  const errorMessage = err instanceof Error ? err.message : String(err);
+  const lowerMessage = errorMessage.toLowerCase();
+
+  return AUTH_KEYWORDS.some((keyword) => lowerMessage.includes(keyword));
 }
 
 function buildFallbackResult(
