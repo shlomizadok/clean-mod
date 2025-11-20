@@ -1,8 +1,14 @@
 // app/dashboard/logs/page.tsx
 
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getCurrentOrganization } from "@/lib/auth";
 import Link from "next/link";
+
+// Constants
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+const DECISION_OPTIONS = ["allow", "flag", "block"] as const;
+const PROVIDER_OPTIONS = ["unitary", "openai"] as const;
 
 type SearchParams = {
   [key: string]: string | string[] | undefined;
@@ -35,29 +41,39 @@ function getDateRangeFromFilter(range?: string): Date | null {
   const now = new Date();
   switch (range) {
     case "24h":
-      return new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      return new Date(now.getTime() - DAY_IN_MS);
     case "7d":
-      return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      return new Date(now.getTime() - 7 * DAY_IN_MS);
     case "30d":
-      return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      return new Date(now.getTime() - 30 * DAY_IN_MS);
     default:
       return null;
   }
 }
 
-function buildWhereClause(orgId: string, filters: FilterValues) {
-  const where: any = {
+function buildWhereClause(
+  orgId: string,
+  filters: FilterValues
+): Prisma.ModerationLogWhereInput {
+  const where: Prisma.ModerationLogWhereInput = {
     orgId,
   };
 
   if (
     filters.decision &&
-    ["allow", "flag", "block"].includes(filters.decision)
+    DECISION_OPTIONS.includes(
+      filters.decision as (typeof DECISION_OPTIONS)[number]
+    )
   ) {
     where.decision = filters.decision;
   }
 
-  if (filters.provider && ["unitary", "openai"].includes(filters.provider)) {
+  if (
+    filters.provider &&
+    PROVIDER_OPTIONS.includes(
+      filters.provider as (typeof PROVIDER_OPTIONS)[number]
+    )
+  ) {
     where.provider = filters.provider;
   }
 
@@ -181,7 +197,7 @@ export default async function LogsPage({ searchParams }: LogsPageProps) {
             Decision:
           </label>
           <div className="flex gap-1 rounded-lg border border-slate-200 bg-white p-1">
-            {["All", "allow", "flag", "block"].map((value) => {
+            {["All", ...DECISION_OPTIONS].map((value) => {
               const isActive =
                 value === "All"
                   ? !filters.decision
@@ -214,7 +230,7 @@ export default async function LogsPage({ searchParams }: LogsPageProps) {
             Provider:
           </label>
           <div className="flex gap-1 rounded-lg border border-slate-200 bg-white p-1">
-            {["All", "unitary", "openai"].map((value) => {
+            {["All", ...PROVIDER_OPTIONS].map((value) => {
               const isActive =
                 value === "All"
                   ? !filters.provider
@@ -310,7 +326,7 @@ export default async function LogsPage({ searchParams }: LogsPageProps) {
               </thead>
               <tbody>
                 {logs.map((log) => {
-                  const norm: any = log.normalized;
+                  const norm = log.normalized as { overall_score?: number };
                   const score =
                     typeof norm?.overall_score === "number"
                       ? norm.overall_score
