@@ -78,13 +78,15 @@ function buildQueryString(
   const params = new URLSearchParams();
 
   // Determine final values for each filter
+  // Check if key exists in updates (even if value is undefined) to distinguish
+  // between "not provided" and "explicitly set to undefined"
   const finalDecision =
-    updates?.decision !== undefined ? updates.decision : filters.decision;
+    updates && "decision" in updates ? updates.decision : filters.decision;
   const finalProvider =
-    updates?.provider !== undefined ? updates.provider : filters.provider;
+    updates && "provider" in updates ? updates.provider : filters.provider;
   const finalRange =
-    updates?.range !== undefined ? updates.range : filters.range;
-  const finalPage = updates?.page !== undefined ? updates.page : filters.page;
+    updates && "range" in updates ? updates.range : filters.range;
+  const finalPage = updates && "page" in updates ? updates.page : filters.page;
 
   // Only add non-empty values to params
   if (finalDecision) params.set("decision", finalDecision);
@@ -93,7 +95,8 @@ function buildQueryString(
   if (finalPage && finalPage > 1) params.set("page", String(finalPage));
 
   const query = params.toString();
-  return query ? `?${query}` : "";
+  // Always return full path - empty query string means no filters
+  return query ? `/dashboard/logs?${query}` : "/dashboard/logs";
 }
 
 function formatTimestamp(date: Date): string {
@@ -191,7 +194,7 @@ export default async function LogsPage({ searchParams }: LogsPageProps) {
               return (
                 <Link
                   key={value}
-                  href={href || "/dashboard/logs"}
+                  href={href}
                   className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
                     isActive
                       ? "bg-slate-900 text-white"
@@ -224,7 +227,7 @@ export default async function LogsPage({ searchParams }: LogsPageProps) {
               return (
                 <Link
                   key={value}
-                  href={href || "/dashboard/logs"}
+                  href={href}
                   className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
                     isActive
                       ? "bg-slate-900 text-white"
@@ -257,7 +260,7 @@ export default async function LogsPage({ searchParams }: LogsPageProps) {
               return (
                 <Link
                   key={value || "all"}
-                  href={href || "/dashboard/logs"}
+                  href={href}
                   className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
                     isActive
                       ? "bg-slate-900 text-white"
