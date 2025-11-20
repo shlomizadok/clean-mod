@@ -24,7 +24,7 @@ export function SidebarNav({ items }: SidebarNavProps) {
             key={item.href}
             href={item.href}
             className={`block rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100 ${
-              isActive ? "bg-slate-100 text-slate-50" : ""
+              isActive ? "bg-slate-100 font-semibold text-slate-900" : ""
             }`}
             aria-current={isActive ? "page" : undefined}
           >
