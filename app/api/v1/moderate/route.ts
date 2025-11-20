@@ -5,7 +5,10 @@ import crypto from "crypto";
 
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { moderateWithUnitary } from "@/lib/moderation/unitaryProvider";
+import {
+  moderateWithUnitary,
+  AuthenticationError,
+} from "@/lib/moderation/unitaryProvider";
 import { hashApiKey } from "@/lib/api-keys";
 
 const HASH_ALGO = "sha256";
@@ -141,14 +144,8 @@ export async function POST(req: NextRequest) {
     try {
       moderationResult = await moderateWithUnitary(text, "english-basic");
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Moderation provider error";
-
-      // Check if this is a provider authentication error
-      if (
-        errorMessage.includes("authentication failed") ||
-        errorMessage.includes("HF_API_TOKEN")
-      ) {
+      // Check if this is a provider authentication error using type-safe instanceof
+      if (err instanceof AuthenticationError) {
         console.error("Moderation provider authentication error:", err);
         return NextResponse.json(
           {
@@ -159,8 +156,17 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Re-throw other errors to be caught by outer catch block
-      throw err;
+      // For other provider errors (network, service unavailable, invalid response, etc.)
+      // Return 503 Service Unavailable instead of 500 Internal Server Error
+      const errorMessage =
+        err instanceof Error ? err.message : "Moderation service error";
+      console.error("Moderation provider error:", err);
+      return NextResponse.json(
+        {
+          error: errorMessage,
+        },
+        { status: 503 }
+      );
     }
 
     // 6) Update lastUsedAt on API key
