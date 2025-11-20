@@ -82,7 +82,7 @@ export async function moderateWithUnitary(
       statusFromRequest;
 
     // Log essential error information
-    const errorMessage = err instanceof Error ? err.message : String(err);
+    const errorMessage = err instanceof Error ? err.message : JSON.stringify(err);
     console.error("[CleanMod] HF InferenceClient error:", {
       message: errorMessage,
       status,
