@@ -15,13 +15,14 @@ datasource db {
 
 /// User accounts for the dashboard (not API consumers directly)
 model User {
-  id           String          @id @default(cuid())
-  clerkId      String?         @unique // Clerk user ID (nullable for migration compatibility)
-  email        String?         // Can be null, synced from Clerk
-  firstName    String?
-  lastName     String?
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @default(now()) @updatedAt
+  id                String          @id @default(cuid())
+  clerkId           String?         @unique // Clerk user ID (nullable for migration compatibility)
+  email             String?         @unique // synced from Clerk
+  firstName         String?
+  lastName          String?
+  allowInputPreview Boolean         @default(false)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @default(now()) @updatedAt
 
   organizations Organization[] // orgs this user owns
 
@@ -110,6 +111,8 @@ model ModerationLog {
   model         String         // e.g. "unitary/multilingual-toxic-xlm-roberta"
 
   inputHash     String         // hash of input text (no raw text stored)
+  inputText     String?        @db.Text // full original input text (optional)
+  inputPreview  String?        @db.Text // truncated preview for UI (optional)
   rawScore      Json           // provider raw response (optional / can truncate)
   normalized    Json           // NormalizedModerationResult JSON
   decision      String         // "allow" | "flag" | "block"
