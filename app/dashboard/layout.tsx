@@ -1,14 +1,15 @@
 // app/dashboard/layout.tsx
 
 import type { ReactNode } from "react";
-import { UserButton } from "@clerk/nextjs";
 import { getCurrentUser } from "@/lib/auth";
 import { SidebarNav } from "./_components/sidebar-nav";
+import { UserMenu } from "./_components/user-menu";
 
 const navItems = [
   { href: "/dashboard", label: "Overview" },
   { href: "/dashboard/api-keys", label: "API Keys" },
   { href: "/dashboard/logs", label: "Logs" },
+  { href: "/dashboard/profile", label: "Profile" },
 ];
 
 export default async function DashboardLayout({
@@ -39,18 +40,34 @@ export default async function DashboardLayout({
 
           <div className="flex items-center gap-3">
             {user && (
-              <div className="text-right text-xs text-slate-500">
-                <div className="font-medium text-slate-700">
-                  {user.firstName && user.lastName
-                    ? `${user.firstName} ${user.lastName}`
-                    : user.email || "User"}
+              <>
+                <div className="hidden sm:block text-right text-xs text-slate-500">
+                  <div className="font-medium text-slate-700">
+                    {user.firstName && user.lastName
+                      ? `${user.firstName} ${user.lastName}`
+                      : user.email || "User"}
+                  </div>
+                  {user.email && (
+                    <div className="text-slate-500">{user.email}</div>
+                  )}
                 </div>
-                {user.email && (
-                  <div className="text-slate-500">{user.email}</div>
-                )}
-              </div>
+                <UserMenu
+                  name={
+                    user.firstName && user.lastName
+                      ? `${user.firstName} ${user.lastName}`
+                      : user.email || "User"
+                  }
+                  email={user.email}
+                  avatarInitials={
+                    user.firstName && user.lastName
+                      ? `${user.firstName[0]}${user.lastName[0]}`
+                      : user.email
+                      ? user.email[0].toUpperCase()
+                      : "U"
+                  }
+                />
+              </>
             )}
-            <UserButton afterSignOutUrl="/" />
           </div>
         </div>
       </header>

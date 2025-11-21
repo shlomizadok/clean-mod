@@ -10,6 +10,7 @@ import {
   AuthenticationError,
 } from "@/lib/moderation/unitaryProvider";
 import { hashApiKey } from "@/lib/api-keys";
+import { buildInputPreview } from "@/lib/moderation/inputPreview";
 
 const HASH_ALGO = "sha256";
 const DEFAULT_FREE_QUOTA = 5_000;
@@ -176,6 +177,7 @@ export async function POST(req: NextRequest) {
 
     // 7) Log to DB
     const inputHash = hashInput(text);
+    const inputPreview = buildInputPreview(text);
 
     const log = await prisma.moderationLog.create({
       data: {
@@ -184,6 +186,8 @@ export async function POST(req: NextRequest) {
         provider: moderationResult.provider,
         model: moderationResult.providerModel,
         inputHash,
+        inputText: text, // full input
+        inputPreview, // truncated for UI
         rawScore: {}, // can store provider raw later
         normalized: moderationResult as unknown as Prisma.InputJsonValue,
         decision: moderationResult.decision,

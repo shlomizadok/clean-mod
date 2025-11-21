@@ -68,22 +68,39 @@ export async function getCurrentUser() {
     }
   }
 
-  // Update user info if it changed in Clerk
-  if (
-    user &&
-    (user.email !== email ||
-      user.firstName !== firstName ||
-      user.lastName !== lastName)
-  ) {
-    user = await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        email: email,
-        firstName: firstName,
-        lastName: lastName,
-      },
-      include: userInclude,
-    });
+  // Update user info from Clerk
+  // - Always sync email (source of truth is Clerk)
+  // - Only sync firstName/lastName if they're null/empty (initial sync only)
+  //   Once user sets them in profile, we don't overwrite
+  if (user) {
+    const updates: {
+      email?: string | null;
+      firstName?: string | null;
+      lastName?: string | null;
+    } = {};
+
+    // Always sync email from Clerk
+    if (user.email !== email) {
+      updates.email = email;
+    }
+
+    // Only sync firstName/lastName if they're currently null/empty
+    // This allows users to customize their name in the profile
+    if (!user.firstName && firstName) {
+      updates.firstName = firstName;
+    }
+    if (!user.lastName && lastName) {
+      updates.lastName = lastName;
+    }
+
+    // Only update if there are changes
+    if (Object.keys(updates).length > 0) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: updates,
+        include: userInclude,
+      });
+    }
   }
 
   return user;

@@ -2,7 +2,7 @@
 
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { getCurrentOrganization } from "@/lib/auth";
+import { getCurrentOrganization, getCurrentUser } from "@/lib/auth";
 import Link from "next/link";
 
 // Constants
@@ -133,6 +133,7 @@ type LogsPageProps = {
 
 export default async function LogsPage({ searchParams }: LogsPageProps) {
   const org = await getCurrentOrganization();
+  const user = await getCurrentUser();
 
   if (!org) {
     return (
@@ -143,6 +144,8 @@ export default async function LogsPage({ searchParams }: LogsPageProps) {
       </div>
     );
   }
+
+  const showPreview = user?.allowInputPreview ?? false;
 
   // Await searchParams if it's a Promise (Next.js 15+)
   const resolvedSearchParams =
@@ -186,6 +189,18 @@ export default async function LogsPage({ searchParams }: LogsPageProps) {
         <p className="mt-1 text-xs text-slate-600">
           Recent moderation events for your organization. Use filters to inspect
           decisions and debug integration issues.
+          {!showPreview && (
+            <span className="ml-1">
+              You can enable text previews in your{" "}
+              <Link
+                href="/dashboard/profile"
+                className="text-emerald-600 hover:text-emerald-700 underline"
+              >
+                profile settings
+              </Link>
+              .
+            </span>
+          )}
         </p>
       </header>
 
@@ -319,6 +334,14 @@ export default async function LogsPage({ searchParams }: LogsPageProps) {
                   <th className="px-4 py-3">Time</th>
                   <th className="px-4 py-3">Decision</th>
                   <th className="px-4 py-3">Score</th>
+                  <th className="px-4 py-3">
+                    {showPreview ? "Text" : "Hash"}
+                    <div className="mt-1 text-[10px] font-normal normal-case text-slate-400">
+                      {showPreview
+                        ? "Showing text previews"
+                        : "Showing hashed values"}
+                    </div>
+                  </th>
                   <th className="px-4 py-3">Provider</th>
                   <th className="px-4 py-3">Model</th>
                   <th className="px-4 py-3">API Key</th>
@@ -331,6 +354,10 @@ export default async function LogsPage({ searchParams }: LogsPageProps) {
                     typeof norm?.overall_score === "number"
                       ? norm.overall_score
                       : undefined;
+
+                  const displayText = showPreview
+                    ? log.inputPreview ?? "[no preview stored]"
+                    : log.inputHash;
 
                   return (
                     <tr
@@ -356,6 +383,15 @@ export default async function LogsPage({ searchParams }: LogsPageProps) {
                       </td>
                       <td className="px-4 py-2 align-top text-xs text-slate-700">
                         {score !== undefined ? score.toFixed(3) : "—"}
+                      </td>
+                      <td className="px-4 py-2 align-top text-xs text-slate-700 max-w-xs">
+                        {showPreview ? (
+                          <span className="break-words">{displayText}</span>
+                        ) : (
+                          <span className="font-mono text-slate-600 break-all">
+                            {displayText}
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-2 align-top text-xs text-slate-700">
                         {log.provider}
