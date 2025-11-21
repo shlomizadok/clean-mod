@@ -34,8 +34,8 @@ export function ProfileForm({
 
     startTransition(async () => {
       const result = await updateProfile({
-        firstName: firstName.trim() || undefined,
-        lastName: lastName.trim() || undefined,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
       });
 
       if (result.success) {

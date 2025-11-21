@@ -59,7 +59,10 @@ export default async function ProfilePage() {
           <h2 className="mb-4 text-sm font-semibold tracking-tight">
             Privacy & Logs
           </h2>
-          <PreviewToggle initialValue={user.allowInputPreview} />
+          <PreviewToggle
+            initialValue={user.allowInputPreview}
+            label="Show input text in logs"
+          />
           <p className="mt-3 text-xs text-slate-600">
             When enabled, CleanMod will display a truncated preview of moderated
             input text in your dashboard logs. The full text is still stored in

@@ -5,9 +5,10 @@ import { updateProfile } from "../actions";
 
 type PreviewToggleProps = {
   initialValue: boolean;
+  label: string;
 };
 
-export function PreviewToggle({ initialValue }: PreviewToggleProps) {
+export function PreviewToggle({ initialValue, label }: PreviewToggleProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [value, setValue] = useState(initialValue);
@@ -44,9 +45,7 @@ export function PreviewToggle({ initialValue }: PreviewToggleProps) {
             }`}
           />
         </button>
-        <label className="text-sm font-medium text-slate-700">
-          Show input text in logs
-        </label>
+        <label className="text-sm font-medium text-slate-700">{label}</label>
         {isPending && <span className="text-xs text-slate-500">Saving...</span>}
       </div>
       {error && (

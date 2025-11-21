@@ -19,6 +19,19 @@ export default async function DashboardLayout({
 }) {
   const user = await getCurrentUser();
 
+  // Compute user display values
+  const name =
+    user && user.firstName && user.lastName
+      ? `${user.firstName} ${user.lastName}`
+      : user?.email || "User";
+
+  const avatarInitials =
+    user && user.firstName && user.lastName
+      ? `${user.firstName[0]}${user.lastName[0]}`
+      : user?.email
+      ? user.email[0].toUpperCase()
+      : "U";
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       {/* Top bar */}
@@ -39,36 +52,21 @@ export default async function DashboardLayout({
           </div>
 
           <div className="flex items-center gap-3">
-            {user &&
-              (() => {
-                const name =
-                  user.firstName && user.lastName
-                    ? `${user.firstName} ${user.lastName}`
-                    : user.email || "User";
-
-                const avatarInitials =
-                  user.firstName && user.lastName
-                    ? `${user.firstName[0]}${user.lastName[0]}`
-                    : user.email
-                    ? user.email[0].toUpperCase()
-                    : "U";
-
-                return (
-                  <>
-                    <div className="hidden sm:block text-right text-xs text-slate-500">
-                      <div className="font-medium text-slate-700">{name}</div>
-                      {user.email && (
-                        <div className="text-slate-500">{user.email}</div>
-                      )}
-                    </div>
-                    <UserMenu
-                      name={name}
-                      email={user.email}
-                      avatarInitials={avatarInitials}
-                    />
-                  </>
-                );
-              })()}
+            {user && (
+              <>
+                <div className="hidden sm:block text-right text-xs text-slate-500">
+                  <div className="font-medium text-slate-700">{name}</div>
+                  {user.email && (
+                    <div className="text-slate-500">{user.email}</div>
+                  )}
+                </div>
+                <UserMenu
+                  name={name}
+                  email={user.email}
+                  avatarInitials={avatarInitials}
+                />
+              </>
+            )}
           </div>
         </div>
       </header>

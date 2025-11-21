@@ -9,6 +9,25 @@ export type UpdateProfileResult =
   | { success: false; error: string };
 
 /**
+ * Validate name field length
+ */
+const validateName = (
+  name: string | undefined,
+  fieldName: string
+): UpdateProfileResult | null => {
+  if (name !== undefined) {
+    const trimmedName = name.trim();
+    if (trimmedName && trimmedName.length > 100) {
+      return {
+        success: false,
+        error: `${fieldName} must be 100 characters or less`,
+      };
+    }
+  }
+  return null;
+};
+
+/**
  * Update user profile information
  */
 export async function updateProfile(data: {
@@ -24,19 +43,6 @@ export async function updateProfile(data: {
     }
 
     // Validate input lengths
-    const validateName = (name: string | undefined, fieldName: string) => {
-      if (name !== undefined) {
-        const trimmedName = name.trim();
-        if (trimmedName && trimmedName.length > 100) {
-          return {
-            success: false,
-            error: `${fieldName} must be 100 characters or less`,
-          };
-        }
-      }
-      return null;
-    };
-
     const firstNameError = validateName(data.firstName, "First name");
     if (firstNameError) return firstNameError;
 
