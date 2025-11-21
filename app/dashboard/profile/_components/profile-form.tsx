@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { updateProfile } from "../actions";
 
 type ProfileFormProps = {
@@ -18,6 +18,15 @@ export function ProfileForm({
   const [firstName, setFirstName] = useState(initialFirstName || "");
   const [lastName, setLastName] = useState(initialLastName || "");
 
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
@@ -31,8 +40,6 @@ export function ProfileForm({
 
       if (result.success) {
         setSuccess(true);
-        // Clear success message after 3 seconds
-        setTimeout(() => setSuccess(false), 3000);
       } else {
         setError(result.error);
       }

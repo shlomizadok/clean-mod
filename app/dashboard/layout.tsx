@@ -39,35 +39,36 @@ export default async function DashboardLayout({
           </div>
 
           <div className="flex items-center gap-3">
-            {user && (
-              <>
-                <div className="hidden sm:block text-right text-xs text-slate-500">
-                  <div className="font-medium text-slate-700">
-                    {user.firstName && user.lastName
-                      ? `${user.firstName} ${user.lastName}`
-                      : user.email || "User"}
-                  </div>
-                  {user.email && (
-                    <div className="text-slate-500">{user.email}</div>
-                  )}
-                </div>
-                <UserMenu
-                  name={
-                    user.firstName && user.lastName
-                      ? `${user.firstName} ${user.lastName}`
-                      : user.email || "User"
-                  }
-                  email={user.email}
-                  avatarInitials={
-                    user.firstName && user.lastName
-                      ? `${user.firstName[0]}${user.lastName[0]}`
-                      : user.email
-                      ? user.email[0].toUpperCase()
-                      : "U"
-                  }
-                />
-              </>
-            )}
+            {user &&
+              (() => {
+                const name =
+                  user.firstName && user.lastName
+                    ? `${user.firstName} ${user.lastName}`
+                    : user.email || "User";
+
+                const avatarInitials =
+                  user.firstName && user.lastName
+                    ? `${user.firstName[0]}${user.lastName[0]}`
+                    : user.email
+                    ? user.email[0].toUpperCase()
+                    : "U";
+
+                return (
+                  <>
+                    <div className="hidden sm:block text-right text-xs text-slate-500">
+                      <div className="font-medium text-slate-700">{name}</div>
+                      {user.email && (
+                        <div className="text-slate-500">{user.email}</div>
+                      )}
+                    </div>
+                    <UserMenu
+                      name={name}
+                      email={user.email}
+                      avatarInitials={avatarInitials}
+                    />
+                  </>
+                );
+              })()}
           </div>
         </div>
       </header>

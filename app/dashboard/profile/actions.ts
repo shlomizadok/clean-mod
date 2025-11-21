@@ -24,25 +24,24 @@ export async function updateProfile(data: {
     }
 
     // Validate input lengths
-    if (data.firstName !== undefined) {
-      const firstName = data.firstName?.trim() || null;
-      if (firstName && firstName.length > 100) {
-        return {
-          success: false,
-          error: "First name must be 100 characters or less",
-        };
+    const validateName = (name: string | undefined, fieldName: string) => {
+      if (name !== undefined) {
+        const trimmedName = name.trim();
+        if (trimmedName && trimmedName.length > 100) {
+          return {
+            success: false,
+            error: `${fieldName} must be 100 characters or less`,
+          };
+        }
       }
-    }
+      return null;
+    };
 
-    if (data.lastName !== undefined) {
-      const lastName = data.lastName?.trim() || null;
-      if (lastName && lastName.length > 100) {
-        return {
-          success: false,
-          error: "Last name must be 100 characters or less",
-        };
-      }
-    }
+    const firstNameError = validateName(data.firstName, "First name");
+    if (firstNameError) return firstNameError;
+
+    const lastNameError = validateName(data.lastName, "Last name");
+    if (lastNameError) return lastNameError;
 
     // Update user
     await prisma.user.update({
