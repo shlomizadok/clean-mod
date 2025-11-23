@@ -177,7 +177,9 @@ export async function POST(req: NextRequest) {
 
     // 7) Log to DB
     const inputHash = hashInput(text);
-    const inputPreview = buildInputPreview(text);
+    // Only compute and store inputPreview if org has enabled it
+    const inputPreview =
+      org.storeInputPreview === true ? buildInputPreview(text) : null;
 
     const log = await prisma.moderationLog.create({
       data: {
@@ -186,8 +188,7 @@ export async function POST(req: NextRequest) {
         provider: moderationResult.provider,
         model: moderationResult.providerModel,
         inputHash,
-        inputText: text, // full input
-        inputPreview, // truncated for UI
+        inputPreview,
         rawScore: {}, // can store provider raw later
         normalized: moderationResult as unknown as Prisma.InputJsonValue,
         decision: moderationResult.decision,

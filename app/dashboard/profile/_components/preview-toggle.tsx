@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { updateProfile } from "../actions";
+import { updateOrgPreviewSetting } from "../actions";
 
 type PreviewToggleProps = {
   initialValue: boolean;
@@ -17,7 +17,7 @@ export function PreviewToggle({ initialValue, label }: PreviewToggleProps) {
     setError(null);
     setValue(newValue);
     startTransition(async () => {
-      const result = await updateProfile({ allowInputPreview: newValue });
+      const result = await updateOrgPreviewSetting(newValue);
       if (!result.success) {
         setError(result.error);
         // Revert on error

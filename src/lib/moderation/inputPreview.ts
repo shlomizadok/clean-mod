@@ -1,4 +1,4 @@
-const INPUT_PREVIEW_MAX_LENGTH = 300;
+const INPUT_PREVIEW_MAX_LENGTH = 200;
 
 /**
  * Build a truncated preview of input text for UI display.
