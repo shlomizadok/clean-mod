@@ -144,7 +144,7 @@ export default async function LogsPage({ searchParams }: LogsPageProps) {
     );
   }
 
-  const showPreview = org.storeInputPreview === true;
+  const showPreview = org.storeInputPreview;
 
   // Await searchParams if it's a Promise (Next.js 15+)
   const resolvedSearchParams =
