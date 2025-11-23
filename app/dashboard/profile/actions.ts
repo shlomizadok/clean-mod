@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, getCurrentOrganization } from "@/lib/auth";
 
 export type UpdateProfileResult =
   | { success: true }
@@ -33,7 +33,6 @@ const validateName = (
 export async function updateProfile(data: {
   firstName?: string;
   lastName?: string;
-  allowInputPreview?: boolean;
 }): Promise<UpdateProfileResult> {
   try {
     const user = await getCurrentUser();
@@ -59,15 +58,11 @@ export async function updateProfile(data: {
         ...(data.lastName !== undefined && {
           lastName: data.lastName?.trim() || null,
         }),
-        ...(data.allowInputPreview !== undefined && {
-          allowInputPreview: data.allowInputPreview,
-        }),
       },
     });
 
-    // Revalidate the profile page and logs page (since it depends on allowInputPreview)
+    // Revalidate the profile page
     revalidatePath("/dashboard/profile");
-    revalidatePath("/dashboard/logs");
 
     return { success: true };
   } catch (error: any) {
@@ -75,6 +70,40 @@ export async function updateProfile(data: {
     return {
       success: false,
       error: error?.message || "Failed to update profile",
+    };
+  }
+}
+
+/**
+ * Update organization's storeInputPreview setting
+ * Only the org owner can update this setting
+ */
+export async function updateOrgPreviewSetting(
+  storeInputPreview: boolean
+): Promise<UpdateProfileResult> {
+  try {
+    const org = await getCurrentOrganization();
+
+    if (!org) {
+      return { success: false, error: "Organization not found" };
+    }
+
+    // Update organization setting
+    await prisma.organization.update({
+      where: { id: org.id },
+      data: { storeInputPreview },
+    });
+
+    // Revalidate the profile page and logs page (since it depends on storeInputPreview)
+    revalidatePath("/dashboard/profile");
+    revalidatePath("/dashboard/logs");
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error updating organization preview setting:", error);
+    return {
+      success: false,
+      error: error?.message || "Failed to update preview setting",
     };
   }
 }

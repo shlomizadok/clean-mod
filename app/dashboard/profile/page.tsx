@@ -1,17 +1,28 @@
 // app/dashboard/profile/page.tsx
 
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, getCurrentOrganization } from "@/lib/auth";
 import { ProfileForm } from "./_components/profile-form";
 import { PreviewToggle } from "./_components/preview-toggle";
 
 export default async function ProfilePage() {
   const user = await getCurrentUser();
+  const org = await getCurrentOrganization();
 
   if (!user) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <p className="text-gray-600">
           Unable to load user profile. Please try refreshing.
+        </p>
+      </div>
+    );
+  }
+
+  if (!org) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <p className="text-gray-600">
+          Unable to load organization. Please try refreshing.
         </p>
       </div>
     );
@@ -60,14 +71,14 @@ export default async function ProfilePage() {
             Privacy & Logs
           </h2>
           <PreviewToggle
-            initialValue={user.allowInputPreview}
-            label="Show input text in logs"
+            initialValue={org.storeInputPreview}
+            label="Store text previews in moderation logs"
           />
           <p className="mt-3 text-xs text-slate-600">
-            When enabled, CleanMod will display a truncated preview of moderated
-            input text in your dashboard logs. The full text is still stored in
-            the database. When disabled, only hashed values will be shown in the
-            logs UI.
+            When enabled, CleanMod will store and display a truncated preview of
+            moderated text (up to 300 characters) in your dashboard logs for
+            future requests. When disabled, only hashed values are stored and
+            shown.
           </p>
         </div>
       </section>
